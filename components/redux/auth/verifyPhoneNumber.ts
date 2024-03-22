@@ -1,5 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import {
+    ConfirmationResult,
     PhoneAuthProvider,
     RecaptchaVerifier,
     linkWithPhoneNumber,
@@ -23,7 +24,7 @@ export const sendVerificationCode = createAsyncThunk(
             recaptcha: RecaptchaVerifier | null;
             callback: (
                 args:
-                    | { type: 'success'; verificationId: string }
+                    | { type: 'success'; confirmationResult: ConfirmationResult }
                     | {
                           type: 'error';
                           message: string;
@@ -32,6 +33,7 @@ export const sendVerificationCode = createAsyncThunk(
         },
         { dispatch }
     ) => {
+        // If the user is signing up with phone number, they will not be logged in yet.
         if (args.auth.type !== LoadingStateTypes.LOADED) return;
         if (!args.recaptchaResolved || !args.recaptcha) {
             dispatch(showToast({ message: 'First Resolved the Captcha', type: 'info' }));
@@ -48,11 +50,12 @@ export const sendVerificationCode = createAsyncThunk(
         }
 
         try {
-            const sentConfirmationCode = await linkWithPhoneNumber(
+            const confirmationResult = await linkWithPhoneNumber(
                 args.auth.user,
                 args.phoneNumber,
                 args.recaptcha
             );
+
             dispatch(
                 showToast({
                     message: 'Verification Code has been sent to your Phone',
@@ -63,7 +66,7 @@ export const sendVerificationCode = createAsyncThunk(
             if (args.callback)
                 args.callback({
                     type: 'success',
-                    verificationId: sentConfirmationCode.verificationId,
+                    confirmationResult: confirmationResult,
                 });
         } catch (error: any) {
             dispatch(
@@ -90,9 +93,11 @@ export const verifyPhoneNumber = createAsyncThunk(
     'verifyPhoneNumber',
     async (
         args: {
+            signUpType: string | undefined;
             OTPCode: string;
             auth: AuthContextType;
-            verificationId: string;
+            // Brought in the entire confirmationResult object to be able to call the confirm method on it
+            confirmationResult: ConfirmationResult | null | undefined;
             callback: (
                 args:
                     | { type: 'success' }
@@ -104,18 +109,33 @@ export const verifyPhoneNumber = createAsyncThunk(
         },
         { dispatch }
     ) => {
-        if (
-            args.OTPCode === null ||
-            !args.verificationId ||
-            args.auth.type !== LoadingStateTypes.LOADED
-        )
-            return;
+        // If the confirmationResult is null, then the user has not yet requested the OTP, return
+        if (!args.confirmationResult) return;
+
+        // If the user is signing up with phone number, they will not be logged in yet.
+        if (args.signUpType !== 'phone') {
+            if (args.auth.type !== LoadingStateTypes.LOADED) return;
+        }
+
+        // If the OTPCode or verificationId is null, then the user has not yet requested the OTP
+        if (args.OTPCode === null || !args.confirmationResult.verificationId) return;
 
         try {
-            const credential = PhoneAuthProvider.credential(args.verificationId, args.OTPCode);
-            await updatePhoneNumber(args.auth.user, credential);
+            if (args.signUpType !== 'phone' && args.auth.type === LoadingStateTypes.LOADED) {
+                const credential = PhoneAuthProvider.credential(
+                    args.confirmationResult.verificationId,
+                    args.OTPCode
+                );
+                await updatePhoneNumber(args.auth.user, credential);
+            }
 
-            firebaseAuth.currentUser?.reload();
+            if (args.signUpType === 'phone' && args.confirmationResult) {
+                await args.confirmationResult.confirm(args.OTPCode);
+            }
+
+            if (firebaseAuth.currentUser) {
+                firebaseAuth.currentUser?.reload();
+            }
 
             dispatch(
                 showToast({

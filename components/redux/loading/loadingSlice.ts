@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { loginWithEmail } from '../auth/loginWithEmail';
 import { sendVerificationCode, verifyPhoneNumber } from '../auth/verifyPhoneNumber';
+import { loginWithPhoneNumber } from '../auth/loginWithPhoneNumber';
 
 export interface LoadingStates {
     [key: string]: boolean;
@@ -17,7 +18,7 @@ export const loadingSlice = createSlice({
     initialState,
     reducers: {},
     extraReducers: (builder) => {
-        // Login
+        // Login with email
         builder.addCase(loginWithEmail.pending, (state) => {
             state.loginWithEmail = true;
         });

@@ -17,7 +17,7 @@
     "export": "next build && next export",
     "lint": "eslint --ignore-path .gitignore --fix",
     "format": "prettier --ignore-path .gitignore \"**/*.+(ts|js|tsx)\" --write",
-    "postinstall": "husky install"
+    "postinstall": "husky"
   },
   "lint-staged": {
     "./**/*.{ts,js,jsx,tsx}": [
@@ -56,7 +56,7 @@
     "eslint": "8.51.0",
     "eslint-config-alloy": "5.1.1",
     "eslint-config-next": "13.5.4",
-    "husky": "8.0.3",
+    "husky": "9.0.11",
     "lint-staged": "15.0.1",
     "postcss": "8.4.31",
     "prettier": "3.0.3",

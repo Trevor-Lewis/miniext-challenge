@@ -6,6 +6,7 @@ import LoginWithGoogleButton from './LoginWithGoogleButton';
 import Input from './Input';
 import { isEmail } from 'validator';
 import { loginWithEmail, useIsLoginWithEmailLoading } from '../redux/auth/loginWithEmail';
+import PhoneVerification from './PhoneVerification';
 
 interface SignUpModalProps {
     open: boolean;
@@ -16,8 +17,9 @@ const SignUpModal = (props: SignUpModalProps) => {
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [signUpType, setSignUpType] = useState<'email' | 'phone'>('email');
     const [disableSubmit, setDisableSubmit] = useState(true);
-    const isLoading = useIsLoginWithEmailLoading();
+    const isEmailLoading = useIsLoginWithEmailLoading();
 
     useEffect(() => {
         if (isEmail(email) && password.length >= 6) {
@@ -57,27 +59,40 @@ const SignUpModal = (props: SignUpModalProps) => {
             <div className="max-w-md w-full bg-white py-6 rounded-lg">
                 <h2 className="text-lg font-semibold text-center mb-10">Sign Up</h2>
                 <div className="px-4 flex p-4 pb-10 gap-4 flex-col">
-                    <Input
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="Email"
-                        name="email"
-                        type="text"
-                    />
-                    <Input
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Password"
-                        name="password"
-                        type="password"
-                    />
-                    <LoadingButton
-                        onClick={signUpWithEmail}
-                        disabled={disableSubmit}
-                        loading={isLoading}
-                    >
-                        Sign Up
-                    </LoadingButton>
+                    {signUpType === 'phone' && (
+                        <PhoneVerification
+                            authType="signup"
+                            setSignUpType={setSignUpType}
+                            signUpType={signUpType}
+                        />
+                    )}
+                    {signUpType === 'email' && (
+                        <>
+                            <Input
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="Email"
+                                name="email"
+                                type="text"
+                            />
+                            <Input
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Password"
+                                name="password"
+                                type="password"
+                            />
+                            <LoadingButton
+                                onClick={signUpWithEmail}
+                                disabled={disableSubmit}
+                                loading={isEmailLoading}
+                            >
+                                Sign Up
+                            </LoadingButton>
+                        </>
+                    )}
+                </div>
+                <div className="px-4">
                     <div className="relative">
                         <div className="absolute inset-0 flex items-center">
                             <div className="w-full border-t border-gray-300" />
@@ -85,6 +100,15 @@ const SignUpModal = (props: SignUpModalProps) => {
                         <div className="relative flex justify-center text-sm">
                             <span className="bg-white px-2 text-gray-500">Or sign up with</span>
                         </div>
+                    </div>
+                    <div className="mt-2 grid grid-cols-1 gap-3">
+                        <LoadingButton
+                            onClick={() =>
+                                setSignUpType(signUpType === 'phone' ? 'email' : 'phone')
+                            }
+                        >
+                            {signUpType === 'phone' ? 'Email' : 'Phone'}
+                        </LoadingButton>
                     </div>
                     <div className="mt-2 grid grid-cols-1 gap-3">
                         <LoginWithGoogleButton />

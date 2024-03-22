@@ -4,6 +4,9 @@ import Spinner from '../Spinner';
 interface LoadingButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     loading?: boolean;
     loadingText?: string;
+    children: React.ReactNode;
+    onClick?: () => void;
+    disabled?: boolean;
 }
 
 /**

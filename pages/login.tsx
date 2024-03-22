@@ -13,6 +13,7 @@ import LoadingButton from '@/components/ui/LoadingButton';
 import SignUpModal from '@/components/ui/SignUpModal';
 import { loginWithEmail, useIsLoginWithEmailLoading } from '@/components/redux/auth/loginWithEmail';
 import { LoadingStateTypes } from '@/components/redux/types';
+import PhoneVerification from '@/components/ui/PhoneVerification';
 
 export const googleLoginProvider = new GoogleAuthProvider();
 
@@ -23,6 +24,8 @@ const LoginPage: NextPage = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [disableSubmit, setDisableSubmit] = useState(true);
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [loginType, setLoginType] = useState<'email' | 'phone'>('email');
     const isLoading = useIsLoginWithEmailLoading();
 
     const [showRegistration, setshowRegistration] = useState(false);
@@ -36,6 +39,14 @@ const LoginPage: NextPage = () => {
             setDisableSubmit(true);
         }
     }, [email, password]);
+
+    // This will remove the reCapcha from the login form
+    // Prevents erroring out due to duplicate reCapcha
+    useEffect(() => {
+        if (showRegistration) {
+            setLoginType('email');
+        }
+    }, [showRegistration]);
 
     // Signing in with email and password and redirecting to home page
     const signInWithEmail = useCallback(async () => {
@@ -71,27 +82,39 @@ const LoginPage: NextPage = () => {
 
                 <div className="max-w-xl w-full rounded overflow-hidden shadow-lg py-2 px-4">
                     <div className="flex gap-4 mb-5 flex-col">
-                        <Input
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="Email"
-                            name="email"
-                            type="text"
-                        />
-                        <Input
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Password"
-                            name="password"
-                            type="password"
-                        />
-                        <LoadingButton
-                            onClick={signInWithEmail}
-                            disabled={disableSubmit}
-                            loading={isLoading}
-                        >
-                            Sign In
-                        </LoadingButton>
+                        {loginType === 'phone' && (
+                            <PhoneVerification
+                                authType="login"
+                                setSignUpType={setLoginType}
+                                signUpType={loginType}
+                            />
+                        )}
+                        {loginType === 'email' && (
+                            <>
+                                <Input
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="Email"
+                                    name="email"
+                                    type="text"
+                                />
+                                <Input
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="Password"
+                                    name="password"
+                                    type="password"
+                                />
+                                <LoadingButton
+                                    onClick={signInWithEmail}
+                                    disabled={disableSubmit}
+                                    loading={isLoading}
+                                >
+                                    Sign In
+                                </LoadingButton>
+                            </>
+                        )}
+
                         <div className="relative">
                             <div className="absolute inset-0 flex items-center">
                                 <div className="w-full border-t border-gray-300" />
@@ -99,6 +122,15 @@ const LoginPage: NextPage = () => {
                             <div className="relative flex justify-center text-sm">
                                 <span className="bg-white px-2 text-gray-500">Or login with</span>
                             </div>
+                        </div>
+                        <div className="mt-2 grid grid-cols-1 gap-3">
+                            <LoadingButton
+                                onClick={() =>
+                                    setLoginType(loginType === 'phone' ? 'email' : 'phone')
+                                }
+                            >
+                                {loginType === 'phone' ? 'Email' : 'Phone'}
+                            </LoadingButton>
                         </div>
                         <div className="mt-2 grid grid-cols-1 gap-3">
                             <LoginWithGoogleButton />
